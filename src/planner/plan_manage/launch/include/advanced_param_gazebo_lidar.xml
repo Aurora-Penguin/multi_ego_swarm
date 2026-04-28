@@ -1,0 +1,189 @@
+<launch>
+    <!-- 从外层 launch 传入的参数。 -->
+    <!-- map_size_* 用于设置体素地图边界，单位为米。 -->
+    <arg name="map_size_x_"/>
+    <arg name="map_size_y_"/>
+    <arg name="map_size_z_"/>
+    <!-- odometry_topic 是规划器的状态输入，一般来自 MAVROS/VIO/LIO 里程计。 -->
+    <arg name="odometry_topic"/>
+    <!-- camera_pose_topic 和 depth_topic 只在使用深度相机构图时生效。 -->
+    <arg name="camera_pose_topic"/>
+    <arg name="depth_topic"/>
+    <!-- cloud_topic 是激光点云建图的主输入。 -->
+    <arg name="cloud_topic"/>
+    <!-- 相机内参；主要在使用深度图输入且启用深度滤波时有意义。 -->
+    <arg name="cx"/>
+    <arg name="cy"/>
+    <arg name="fx"/>
+    <arg name="fy"/>
+    <!-- 轨迹管理器和优化器都会使用这组动力学约束。 -->
+    <arg name="max_vel"/>
+    <arg name="max_acc"/>
+    <arg name="max_jer"/>
+    <!-- planning_horizon 表示规划器向前搜索的距离，单位为米。 -->
+    <arg name="planning_horizon"/>
+    <!-- 航点任务定义。 -->
+    <arg name="point_num"/>
+    <arg name="point0_x"/>
+    <arg name="point0_y"/>
+    <arg name="point0_z"/>
+    <arg name="point1_x"/>
+    <arg name="point1_y"/>
+    <arg name="point1_z"/>
+    <arg name="point2_x"/>
+    <arg name="point2_y"/>
+    <arg name="point2_z"/>
+    <arg name="point3_x"/>
+    <arg name="point3_y"/>
+    <arg name="point3_z"/>
+    <arg name="point4_x"/>
+    <arg name="point4_y"/>
+    <arg name="point4_z"/>
+    <!-- flight_type 选择 FSM 模式；use_multitopology_trajs 控制是否启用多拓扑搜索。 -->
+    <arg name="flight_type"/>
+    <arg name="use_multitopology_trajs"/>
+    <arg name="drone_id"/>
+
+    <node pkg="ego_planner" name="ego_planner_node" type="ego_planner_node" output="screen">
+        <!-- 规划器输入输出话题重映射。 -->
+        <remap from="~odom_world" to="$(arg odometry_topic)"/>
+        <remap from="~mandatory_stop" to="/mandatory_stop_to_planner"/>
+        <!-- 单机 -->
+         <!-- <remap from="~planning/trajectory" to = "/planning/trajectory"/> -->
+         <!-- <remap from="~planning/data_display" to = "/planning/data_display"/> -->
+         <!-- <remap from="~planning/heartbeat" to = "/traj_server/heartbeat"/> -->
+        <remap from="~planning/trajectory" to = "planning/trajectory"/>
+        <remap from="~planning/data_display" to = "planning/data_display"/>
+        <remap from="~planning/broadcast_traj_send" to = "/broadcast_traj_from_planner"/>
+        <remap from="~planning/broadcast_traj_recv" to = "/broadcast_traj_to_planner"/>
+        <remap from="~planning/heartbeat" to = "traj_server/heartbeat"/>
+        <remap from="/goal" to="/goal_with_id"/>
+        <remap from="~grid_map/odom" to="$(arg odometry_topic)"/>
+        <remap from="~grid_map/cloud" to="$(arg cloud_topic)"/>
+        <remap from="~grid_map/pose"   to = "$(arg camera_pose_topic)"/>
+        <remap from="~grid_map/depth" to = "$(arg depth_topic)"/>
+
+        <!-- planning fsm -->
+        <!-- flight_type 和 waypoint* 决定 ego_replan_fsm 中的高层任务逻辑。 -->
+        <param name="fsm/flight_type" value="$(arg flight_type)" type="int"/>
+        <param name="fsm/thresh_replan_time" value="1.0" type="double"/>
+        <param name="fsm/planning_horizon" value="$(arg planning_horizon)" type="double"/>
+        <param name="fsm/emergency_time" value="1.0" type="double"/>
+        <param name="fsm/realworld_experiment" value="false"/>
+        <param name="fsm/fail_safe" value="true"/>
+        <param name="fsm/backward_goal_dot_thresh" value="-0.15" type="double"/>
+        <param name="fsm/backward_horizon_scale" value="0.35" type="double"/>
+        <param name="fsm/waypoint_num" value="$(arg point_num)" type="int"/>
+        <param name="fsm/waypoint0_x" value="$(arg point0_x)" type="double"/>
+        <param name="fsm/waypoint0_y" value="$(arg point0_y)" type="double"/>
+        <param name="fsm/waypoint0_z" value="$(arg point0_z)" type="double"/>
+        <param name="fsm/waypoint1_x" value="$(arg point1_x)" type="double"/>
+        <param name="fsm/waypoint1_y" value="$(arg point1_y)" type="double"/>
+        <param name="fsm/waypoint1_z" value="$(arg point1_z)" type="double"/>
+        <param name="fsm/waypoint2_x" value="$(arg point2_x)" type="double"/>
+        <param name="fsm/waypoint2_y" value="$(arg point2_y)" type="double"/>
+        <param name="fsm/waypoint2_z" value="$(arg point2_z)" type="double"/>
+        <param name="fsm/waypoint3_x" value="$(arg point3_x)" type="double"/>
+        <param name="fsm/waypoint3_y" value="$(arg point3_y)" type="double"/>
+        <param name="fsm/waypoint3_z" value="$(arg point3_z)" type="double"/>
+        <param name="fsm/waypoint4_x" value="$(arg point4_x)" type="double"/>
+        <param name="fsm/waypoint4_y" value="$(arg point4_y)" type="double"/>
+        <param name="fsm/waypoint4_z" value="$(arg point4_z)" type="double"/>
+
+        <!-- grid map -->
+        <!-- resolution 是体素尺寸；越小地图越细，但计算量越大。 -->
+        <param name="grid_map/resolution" value="0.2" />
+        <param name="grid_map/map_size_x" value="$(arg map_size_x_)" />
+        <param name="grid_map/map_size_y" value="$(arg map_size_y_)" />
+        <param name="grid_map/map_size_z" value="$(arg map_size_z_)" />
+        <!-- local_update_range_* 限制无人机周围局部地图的更新窗口。 -->
+        <param name="grid_map/local_update_range_x" value="12.0" />
+        <param name="grid_map/local_update_range_y" value="12.0" />
+        <param name="grid_map/local_update_range_z" value="5.0" />
+        <!-- obstacles_inflation为占据栅格增加安全膨胀半径。 //把真实障碍周围再扩一圈安全距离，规划时不会贴着障碍边缘飞。 -->
+        <param name="grid_map/obstacles_inflation" value="0.35" /> <!-- 0.35米的膨胀半径 -->
+        <param name="grid_map/local_map_margin" value="100"/>
+        <!-- 虚拟地板和天花板用于限制规划高度范围。 -->
+        <param name="grid_map/enable_virtual_wall" value="true"/>
+        <param name="grid_map/virtual_ceil" value="10.0"/>
+        <param name="grid_map/virtual_ground" value="-0.1"/>
+        <!-- cloud_is_world=true 表示输入点云已经在世界坐标系下。 -->
+        <param name="grid_map/cloud_is_world" value="false"/>
+        <param name="grid_map/cloud_body_x" value="0.0"/>
+        <param name="grid_map/cloud_body_y" value="0.0"/>
+        <param name="grid_map/cloud_body_z" value="0.1"/>
+        <param name="grid_map/cloud_body_roll" value="0.0"/>
+        <param name="grid_map/cloud_body_pitch" value="0.0"/>
+        <param name="grid_map/cloud_body_yaw" value="0.0"/>
+        <param name="grid_map/cloud_exclusion_radius" value="0.9"/>
+        <param name="grid_map/cloud_exclusion_height" value="0.8"/>
+        <param name="grid_map/ground_height" value="-0.01"/>
+
+        <!-- camera -->
+        <param name="grid_map/cx" value="$(arg cx)"/>
+        <param name="grid_map/cy" value="$(arg cy)"/>
+        <param name="grid_map/fx" value="$(arg fx)"/>
+        <param name="grid_map/fy" value="$(arg fy)"/>
+
+        <!-- depth filter -->
+        <!-- 这些参数用于在占据更新前抑制深度测量噪声。 -->
+        <param name="grid_map/use_depth_filter" value="true"/>
+        <param name="grid_map/depth_filter_tolerance" value="0.15"/>
+        <param name="grid_map/depth_filter_maxdist" value="5.0"/>
+        <param name="grid_map/depth_filter_mindist" value="0.2"/>
+        <param name="grid_map/depth_filter_margin" value="2"/>
+        <param name="grid_map/k_depth_scaling_factor" value="1000.0"/>
+        <param name="grid_map/skip_pixel" value="2"/>
+
+        <!-- local fusion -->
+        <!-- p_hit/p_miss/p_occ 用于配置局部地图的占据概率更新。 -->
+        <param name="grid_map/p_hit" value="0.65"/>
+        <param name="grid_map/p_miss" value="0.35"/>
+        <param name="grid_map/p_min" value="0.12"/>
+        <param name="grid_map/p_max" value="0.90"/>
+        <param name="grid_map/p_occ" value="0.80"/>
+        <param name="grid_map/fading_time" value="1000.0"/>
+        <param name="grid_map/min_ray_length" value="0.1"/>
+        <param name="grid_map/max_ray_length" value="10"/>
+        <param name="grid_map/visualization_truncate_height" value="1.9"/>
+        <param name="grid_map/show_occ_time" value="false"/>
+        <param name="grid_map/pose_type" value="2"/>
+        <param name="grid_map/frame_id" value="map"/>
+
+        <!-- planner manager -->
+        <!-- max_vel/max_acc 在这里重复配置，是因为 manager 和 optimization 读取不同命名空间。 -->
+        <param name="manager/max_vel" value="$(arg max_vel)" type="double"/>
+        <param name="manager/max_acc" value="$(arg max_acc)" type="double"/>
+        <!-- polyTraj_piece_length 是多项式轨迹生成时的参考分段长度。 -->
+        <param name="manager/polyTraj_piece_length" value="1.5" type="double"/>
+
+        <!-- 限制轨迹分段长度，避免短距离重规划时出现 zero-piece trajectory。 -->
+        <param name="manager/min_piece_length" value="1.0" type="double"/>
+        <param name="manager/max_piece_length" value="4.0" type="double"/>
+        <!-- max_iter 限制每次规划周期内的非线性优化迭代次数。 -->
+        <param name="optimization/max_iter" value="300" type="int"/>
+
+        <param name="manager/feasibility_tolerance" value="0.05" type="double"/>
+        <param name="manager/planning_horizon" value="$(arg planning_horizon)" type="double"/>
+        <param name="manager/use_multitopology_trajs" value="$(arg use_multitopology_trajs)" type="bool"/>
+        <param name="manager/drone_id" value="$(arg drone_id)"/>
+
+        <!-- optimization -->
+        <!-- obstacle/swarm/feasibility/time 权重用于平衡安全性、平滑性和激进程度。 -->
+        <param name="optimization/constraint_points_perPiece" value="6" type="int"/>
+        <param name="optimization/weight_obstacle" value="6000.0" type="double"/>
+        <param name="optimization/weight_obstacle_soft" value="2500.0" type="double"/>
+        <param name="optimization/weight_swarm" value="10000.0" type="double"/>
+        <param name="optimization/weight_feasibility" value="7000.0" type="double"/>
+        <param name="optimization/weight_sqrvariance" value="10000.0" type="double"/>
+        <param name="optimization/weight_time" value="10.0" type="double"/>
+        <param name="optimization/obstacle_clearance" value="0.2" type="double"/>
+        <param name="optimization/obstacle_clearance_soft" value="0.3" type="double"/>
+        <param name="optimization/swarm_clearance" value="0.15" type="double"/>
+        <!-- max_jer 限制轨迹激进程度；record_opt 用于开启优化日志/调试输出。 -->
+        <param name="optimization/max_vel" value="$(arg max_vel)" type="double"/>
+        <param name="optimization/max_acc" value="$(arg max_acc)" type="double"/>
+        <param name="optimization/max_jer" value="$(arg max_jer)" type="double"/>
+        <param name="optimization/record_opt" value="true"/>
+    </node>
+</launch>

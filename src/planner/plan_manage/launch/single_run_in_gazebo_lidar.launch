@@ -1,0 +1,106 @@
+<launch>
+    <!-- Gazebo + 激光点云输入下运行 EGO-Planner 的顶层任务配置。 -->
+    <!-- 地图边界参数，会传入内层规划 launch。 -->
+    <arg name="drone_id" default="0"/>
+    <!-- 多机 -->
+    <!-- <arg name="drone_name" default="iris_$(arg drone_id)"/> -->
+    <!-- 多机 -->
+    <arg name="map_size_x" value="300.0"/>
+    <arg name="map_size_y" value="300.0"/>
+    <arg name="map_size_z" value="20.0"/>
+    <!-- 选择 FSM 飞行模式，通常根据任务逻辑取 1 或 2。 手动目标模式取1，预设航点模式取2 -->
+    <arg name="flight_type" default="1"/>
+    
+    <!-- 航点任务参数：point_num 表示启用前面几个目标点。 -->
+    <arg name="point_num" default="1"/>
+    <arg name="target0_x" default="30.0"/>
+    <arg name="target0_y" default="0.0"/>
+    <arg name="target0_z" default="1.5"/>
+    <arg name="target1_x" default="0.0"/>
+    <arg name="target1_y" default="0.0"/>
+    <arg name="target1_z" default="0.0"/>
+    <arg name="target2_x" default="0.0"/>
+    <arg name="target2_y" default="0.0"/>
+    <arg name="target2_z" default="0.0"/>
+    <arg name="target3_x" default="0.0"/>
+    <arg name="target3_y" default="0.0"/>
+    <arg name="target3_z" default="0.0"/>
+    <arg name="target4_x" default="0.0"/>
+    <arg name="target4_y" default="0.0"/>
+    <arg name="target4_z" default="0.0"/>
+    <!-- 主状态输入和控制输出话题。 -->
+    <arg name="odom_topic" value="mavros/local_position/odom"/>
+    <arg name="cmd_topic" value="position_cmd"/>
+    <!-- <arg name="cmd_topic" value="/position_cmd"/> -->
+
+    <!-- 将实际规划、建图和优化参数传入 ego_planner_node。 -->
+    <include file="$(find ego_planner)/launch/include/advanced_param_gazebo_lidar.xml">
+        <arg name="drone_id" value="$(arg drone_id)"/>
+        <arg name="map_size_x_" value="$(arg map_size_x)"/>
+        <arg name="map_size_y_" value="$(arg map_size_y)"/>
+        <arg name="map_size_z_" value="$(arg map_size_z)"/>
+        <arg name="odometry_topic" value="$(arg odom_topic)"/>
+        <!-- 激光模式下不使用深度图和相机位姿话题。 -->
+        <arg name="camera_pose_topic" value="null"/>
+        <arg name="depth_topic" value="null"/>
+        <!-- <arg name="cloud_topic" value="/livox/lidar"/> -->
+        <arg name="cloud_topic" value="livox/lidar"/>
+        <!-- 即使关闭深度输入，内层 launch 仍要求提供相机内参。 -->
+        <arg name="cx" value="320.5"/>
+        <arg name="cy" value="240.5"/>
+        <arg name="fx" value="554.254691191187"/>
+        <arg name="fy" value="554.254691191187"/>
+
+        <!-- 偏保守的动力学约束有助于在复杂场景中提升优化可行性。 -->
+        <arg name="max_vel" value="2.5" />
+        <arg name="max_acc" value="1.5" />
+        <arg name="max_jer" value="7.0" />
+
+        <!-- 适当增大规划视野，有助于规划器在重规划前看得更远。 -->
+        <arg name="planning_horizon" value="10.0" />
+        <arg name="use_multitopology_trajs" value="false" />
+        <!-- 将外层 target* 参数映射到内层 waypoint 参数。 -->
+        <arg name="flight_type" value="$(arg flight_type)" />
+        <arg name="point_num" value="$(arg point_num)" />
+        <arg name="point0_x" value="$(arg target0_x)" />
+        <arg name="point0_y" value="$(arg target0_y)" />
+        <arg name="point0_z" value="$(arg target0_z)" />
+        <arg name="point1_x" value="$(arg target1_x)" />
+        <arg name="point1_y" value="$(arg target1_y)" />
+        <arg name="point1_z" value="$(arg target1_z)" />
+        <arg name="point2_x" value="$(arg target2_x)" />
+        <arg name="point2_y" value="$(arg target2_y)" />
+        <arg name="point2_z" value="$(arg target2_z)" />
+        <arg name="point3_x" value="$(arg target3_x)" />
+        <arg name="point3_y" value="$(arg target3_y)" />
+        <arg name="point3_z" value="$(arg target3_z)" />
+        <arg name="point4_x" value="$(arg target4_x)" />
+        <arg name="point4_y" value="$(arg target4_y)" />
+        <arg name="point4_z" value="$(arg target4_z)" />
+    </include>
+
+    <!-- trajectory server -->
+    <!-- 将规划轨迹转换为带时间参数的位置指令并发布。 -->
+    <node pkg="ego_planner" name="traj_server" type="traj_server" output="screen">
+        <remap from="position_cmd" to="$(arg cmd_topic)"/>
+        <remap from="~planning/trajectory" to="planning/trajectory"/>
+        <remap from="~heartbeat" to="traj_server/heartbeat"/>
+        <param name="traj_server/time_forward" value="1.0" type="double"/>
+    </node>
+
+    <!-- 在 RViz 中显示里程计和无人机姿态；该节点不参与规划。 -->
+    <node pkg="odom_visualization" name="odom_visualization" type="odom_visualization" output="screen">
+        <remap from="~odom" to="$(arg odom_topic)"/>
+        <param name="color/a" value="1.0"/>    
+        <param name="color/r" value="0.0"/>        
+        <param name="color/g" value="0.0"/>        
+        <param name="color/b" value="0.0"/>       
+        <param name="covariance_scale" value="100.0"/>       
+        <param name="robot_scale" value="0.5"/>
+        <param name="tf45" value="false"/>
+        <param name="drone_id" value="$(arg drone_id)"/>
+    </node>
+<!-- 单机 -->
+    <!-- <include file="$(find ego_planner)/launch/rviz.launch"/> -->
+<!-- 单机 -->
+</launch>

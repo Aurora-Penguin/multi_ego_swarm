@@ -1,0 +1,12 @@
+build/
+devel/
+install/
+logs/
+.catkin_workspace
+*~
+*.swp
+*.orig
+.vscode/
+# Add common python and c++ ignores if needed
+__pycache__/
+*.pyc

@@ -1,0 +1,3 @@
+<launch>
+  <node pkg="assign_goals" name="assign_goals_node" type="assign_goals_node" output="screen" />
+</launch>
