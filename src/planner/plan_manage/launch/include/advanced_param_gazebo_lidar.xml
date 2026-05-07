@@ -101,12 +101,12 @@
         <param name="grid_map/local_update_range_y" value="12.0" />
         <param name="grid_map/local_update_range_z" value="5.0" />
         <!-- obstacles_inflation为占据栅格增加安全膨胀半径。 //把真实障碍周围再扩一圈安全距离，规划时不会贴着障碍边缘飞。 -->
-        <param name="grid_map/obstacles_inflation" value="0.35" /> <!-- 0.35米的膨胀半径 -->
+        <param name="grid_map/obstacles_inflation" value="0.6" /> <!-- 0.35米的膨胀半径 -->
         <param name="grid_map/local_map_margin" value="100"/>
         <!-- 虚拟地板和天花板用于限制规划高度范围。 -->
         <param name="grid_map/enable_virtual_wall" value="true"/>
         <param name="grid_map/virtual_ceil" value="10.0"/>
-        <param name="grid_map/virtual_ground" value="-0.1"/>
+        <param name="grid_map/virtual_ground" value="0.5"/>
         <!-- cloud_is_world=true 表示输入点云已经在世界坐标系下。 -->
         <param name="grid_map/cloud_is_world" value="false"/>
         <param name="grid_map/cloud_body_x" value="0.0"/>
