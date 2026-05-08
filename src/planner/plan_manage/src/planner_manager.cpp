@@ -372,6 +372,30 @@ namespace ego_planner
       touch_goal = true;
     }
 
+    // If local target is in collision, walk back along global traj to find a safe point
+    if (grid_map_->getInflateOccupancy(local_target_pos))
+    {
+      const double min_dist = 1.0; // Don't pull back closer than 1m to drone
+      for (double t_back = t - t_step;
+           t_back > traj_.global_traj.glb_t_of_lc_tgt;
+           t_back -= t_step)
+      {
+        Eigen::Vector3d pos_back = traj_.global_traj.traj.getPos(t_back - traj_.global_traj.global_start_time);
+        if ((pos_back - start_pt).norm() < min_dist)
+          break;
+
+        if (!grid_map_->getInflateOccupancy(pos_back))
+        {
+          local_target_pos = pos_back;
+          traj_.global_traj.glb_t_of_lc_tgt = t_back;
+          touch_goal = false;
+          ROS_WARN("[getLocalTarget] Local target was in collision, pulled back to (%.2f, %.2f, %.2f)",
+                   pos_back.x(), pos_back.y(), pos_back.z());
+          break;
+        }
+      }
+    }
+
     if ((global_end_pt - local_target_pos).norm() < (pp_.max_vel_ * pp_.max_vel_) / (2 * pp_.max_acc_))
     {
       local_target_vel = Eigen::Vector3d::Zero();

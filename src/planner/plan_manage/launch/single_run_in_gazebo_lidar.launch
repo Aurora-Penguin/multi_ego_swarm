@@ -52,7 +52,7 @@
         <arg name="fy" value="554.254691191187"/>
 
         <!-- 偏保守的动力学约束有助于在复杂场景中提升优化可行性。 -->
-        <arg name="max_vel" value="2.5" />
+        <arg name="max_vel" value="2.0" />
         <arg name="max_acc" value="1.5" />
         <arg name="max_jer" value="7.0" />
 

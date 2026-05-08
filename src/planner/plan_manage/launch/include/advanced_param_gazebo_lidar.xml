@@ -66,7 +66,7 @@
         <!-- planning fsm -->
         <!-- flight_type 和 waypoint* 决定 ego_replan_fsm 中的高层任务逻辑。 -->
         <param name="fsm/flight_type" value="$(arg flight_type)" type="int"/>
-        <param name="fsm/thresh_replan_time" value="1.0" type="double"/>
+        <param name="fsm/thresh_replan_time" value="0.3" type="double"/>
         <param name="fsm/planning_horizon" value="$(arg planning_horizon)" type="double"/>
         <param name="fsm/emergency_time" value="1.0" type="double"/>
         <param name="fsm/realworld_experiment" value="false"/>
@@ -174,7 +174,7 @@
         <param name="optimization/weight_obstacle" value="6000.0" type="double"/>
         <param name="optimization/weight_obstacle_soft" value="2500.0" type="double"/>
         <param name="optimization/weight_swarm" value="10000.0" type="double"/>
-        <param name="optimization/weight_feasibility" value="7000.0" type="double"/>
+        <param name="optimization/weight_feasibility" value="5500.0" type="double"/>
         <param name="optimization/weight_sqrvariance" value="10000.0" type="double"/>
         <param name="optimization/weight_time" value="10.0" type="double"/>
         <param name="optimization/obstacle_clearance" value="0.2" type="double"/>

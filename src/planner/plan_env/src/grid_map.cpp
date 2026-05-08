@@ -143,7 +143,7 @@ void GridMap::initMap(ros::NodeHandle &nh)
       node_.subscribe<sensor_msgs::PointCloud2>("grid_map/cloud", 10, &GridMap::cloudCallback, this);
   /* 更新栅格地图并显示*/
   occ_timer_ = node_.createTimer(ros::Duration(0.032), &GridMap::updateOccupancyCallback, this);
-  vis_timer_ = node_.createTimer(ros::Duration(1.0), &GridMap::visCallback, this);
+  vis_timer_ = node_.createTimer(ros::Duration(0.125), &GridMap::visCallback, this);
 
  /* 暂时 不知道用来干什么*/
   if (mp_.fading_time_ > 0) //true
